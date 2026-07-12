@@ -1,0 +1,35 @@
+# --- Datos y DataSets (CRÍTICO) ---
+# Evita subir los archivos de datos (pesados o confidenciales)
+*.json
+
+# Si tienes una carpeta específica para los datos, puedes ignorarla completa:
+# data/
+
+# --- Entornos Virtuales ---
+.venv/
+venv/
+ENV/
+env/
+# Configuración de entornos de Anaconda / Miniconda
+.conda/
+
+# --- Python (Caché y Temporales) ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+
+# --- Configuración del Editor / IDE ---
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# PyCharm / JetBrains
+.idea/
+
+# --- Sistema Operativo ---
+.DS_Store
+Thumbs.db

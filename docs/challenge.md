@@ -23,3 +23,16 @@ En cuanto a efecto intrasemanal o efecto dia de semana existiría una regularida
 ![alt text](Grafico-efecto-dia-semana.png)
 
 El Analisis exploratorio, indica que existen claros clusters de consumo con respecto a los medicamentos, por lo que el modelo de ajuste debe contemplar las tres variantes tendencia alcista, estacionalidad invernal e invariabilidad temporal de manera de mejorar las métricas de desempeño y la precisión de las predicciones.
+
+# Modelamiento 
+
+## 1. Selección del Algoritmo
+Se seleccionó un `RandomForestRegressor`. Esta decisión se fundamenta en los hallazgos del EDA: 
+* Al existir una demanda inelástica pero con tendencias crecientes a largo plazo (Cardiovascular) y picos invernales (Respiratorio), este modelo aísla de forma óptima las interacciones de variables categóricas sin necesidad de transformaciones de estacionariedad econométrica clásica.
+
+## 2. Preprocesamiento e ingeniería de características (Features)
+La matriz de diseño se construyó a partir de variables de orden temporal:
+* Se utilizó componentes armónicos (`mes_sin`, `mes_cos`) para encapsular la estacionalidad del consumo.
+* Una variable de conteo lineal continuo (`tendencia_dias`) para guiar la proyección frente al crecimiento interanual.
+* Dos variables de categorías operativas (línea terapéutica  y uso) reemplazando por la media histórica de su demanda mediante target encoding, agrupando los registros nuevos o faltantes bajo la etiqueta 'OTRO'.
+* También se incluyo variable de `dia_semana` para abordar variaciones en consumo según dia de la semana. 

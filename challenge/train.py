@@ -15,12 +15,13 @@ def main():
     # Cargar datos
     movimientos = pd.read_csv("dataset/movimientos.csv")
 
-    # TODO: Preprocesar y entrenar
-    # features, target = model.preprocess(data=movimientos, target_column="cantidad")
-    # model.fit(features=features, target=target)
+    # Preprocesar y entrenar
+    features, target = model.preprocess(data=movimientos, target_column="cantidad")
+    model.fit(features=features, target=target)
 
-    # TODO: Persistir modelo
-    # model.save("model.pkl")
+    # Persistir modelo
+    model.save("model.pkl")
+    print("Ajuste completado con éxito. El archivo 'model.pkl' está listo para producción.")
 
 
 if __name__ == "__main__":

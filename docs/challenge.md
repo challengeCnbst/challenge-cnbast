@@ -36,3 +36,18 @@ La matriz de diseño se construyó a partir de variables de orden temporal:
 * Una variable de conteo lineal continuo (`tendencia_dias`) para guiar la proyección frente al crecimiento interanual.
 * Dos variables de categorías operativas (línea terapéutica  y uso) reemplazando por la media histórica de su demanda mediante target encoding, agrupando los registros nuevos o faltantes bajo la etiqueta 'OTRO'.
 * También se incluyo variable de `dia_semana` para abordar variaciones en consumo según dia de la semana. 
+
+El modelo ajustado, arrojó los siguientes resultados: 
+*   MAE Baseline (Media por Producto): 4.7828
+*   MAE Modelo (Random Forest):        3.4401
+*   Mejora respecto al benchmark:      28.08%
+
+El modelo arroja una mejora del 28.08% con respecto al modelo de referencia. Pese a lo anterior, según lo determinado en el EDA, se recomienda generar un modelo distinto por cada tipo de demanda de medicamentos para un mejor desempeño y precisión en las predicciones. Por simplicidad en este caso se prosigue con el modelo único dado que cumple las especificaciones solicitadas. 
+
+Optimizar el modelo y reducir su complejidad es vital para un mejor desempeño y menor uso de recursos por lo que se realizó una reducción de features obteniendo la siguiente mejora: 
+
+*   MAE Baseline (Media por Producto): 4.7828
+*   MAE Modelo (Random Forest):        3.3560
+*   Mejora respecto al benchmark:      29.83%
+
+Al realizar ajuste de features quitando las variables de dia de semana y las categoricas el modelo mejora con una reducción del 29.83% con respecto al caso base. Un modelo más simple que no requiera de datos adicionales categóricos es vital para evitar problemas de sobrecarga y pueda superar pruebas de stress.

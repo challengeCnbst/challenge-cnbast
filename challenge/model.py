@@ -1,14 +1,24 @@
+import os
+import pickle
 import pandas as pd
 import numpy as np
 from typing import Tuple, Union, List
-
+from sklearn.ensemble import RandomForestRegressor
 
 class ReplenishmentModel:
 
     def __init__(
         self
     ):
-        self._model = None  # El modelo debe guardarse en este atributo.
+        self._model = RandomForestRegressor(n_estimators=50, random_state=42, n_jobs=-1)
+        self.is_trained = False
+        
+        self.feature_cols = [
+            'gtin', 'año', 'mes_sin', 'mes_cos',
+        ]
+        
+        # Una lista para la validación de la API en producción
+        self.trained_gtins = set()      
 
     def preprocess(
         self,
@@ -33,28 +43,18 @@ class ReplenishmentModel:
         df_out['fecha_dt'] = pd.to_datetime(df_out['fecha'])
         df_out['año'] = df_out['fecha_dt'].dt.year
         df_out['mes'] = df_out['fecha_dt'].dt.month
-        df_out['dia_semana'] = df_out['fecha_dt'].dt.dayofweek
 
         # Componentes cíclicos del mes
         df_out['mes_sin'] = np.sin(2 * np.pi * df_out['mes'] / 12.0)
         df_out['mes_cos'] = np.cos(2 * np.pi * df_out['mes'] / 12.0)
-
-        # Variable de tendencia
-        fecha_minima = df_out['fecha_dt'].min() 
-        df_out['tendencia_dias'] = (df_out['fecha_dt'] - fecha_minima).dt.days
 
         # CASO A: Pipeline de entrenamiento
         if target_column is not None:
             if 'tipo_movimiento' in df_out.columns:
                 df_out = df_out[df_out['tipo_movimiento'] == 'S'].copy()
             
-            # Calculo de variables linea_encoded y uso_encoded usando el consumo promedio por categoria
-            self.gtin_to_linea_media = df_out.groupby('gtin')[target_column].transform('mean').groupby(df_out['gtin']).first().to_dict()
-            self.gtin_to_uso_media = df_out.groupby('gtin')[target_column].transform('mean').groupby(df_out['gtin']).first().to_dict()
-
-            # Asignar los encodings calculados internamente a la matriz
-            df_out['linea_encoded'] = df_out['gtin'].map(self.gtin_to_linea_media)
-            df_out['uso_encoded'] = df_out['gtin'].map(self.gtin_to_uso_media)
+            # Guardamos los GTINs de entrenamiento para la validación de la API
+            self.trained_gtins = set(df_out['gtin'].unique())
 
             features = df_out[self.feature_cols].copy()
             target = df_out[[target_column]].copy()
@@ -62,10 +62,6 @@ class ReplenishmentModel:
         
         # CASO B: Pipeline de inferencia / predicción (consumo desde API)
         else:
-            # Si aparece un gtin desconocido, se usa valor por defecto para evitar errores
-            df_out['linea_encoded'] = df_out['gtin'].map(self.gtin_to_linea_media).fillna(0.0)
-            df_out['uso_encoded'] = df_out['gtin'].map(self.gtin_to_uso_media).fillna(0.0)
-
             features = df_out[self.feature_cols].copy()
             features['fecha'] = data['fecha'].values 
             return features
@@ -82,7 +78,9 @@ class ReplenishmentModel:
             features (pd.DataFrame): datos preprocesados.
             target (pd.DataFrame): variable objetivo.
         """
-        return
+        X_train = features[self.feature_cols]
+        self._model.fit(X_train, target.values.ravel())
+        self.is_trained = True
 
     def predict(
         self,
@@ -97,7 +95,25 @@ class ReplenishmentModel:
         Returns:
             (List[dict]): predicciones con keys 'fecha' y 'cantidad'.
         """
-        return
+        date_original = features['fecha'].values
+        X_inference = features[self.feature_cols]
+
+        # Manejo en caso de predict sin ajuste
+        if not self.is_trained:
+            raw_preds = np.zeros(len(X_inference))
+        else:
+            raw_preds = self._model.predict(X_inference)
+
+        # Chequeo que cantidad cosnumida no puede ser negativa
+        preds_clipped = np.clip(raw_preds, a_min=0, a_max=None)
+
+        results = []
+        for date, pred in zip(date_original, preds_clipped):
+            results.append({
+                "fecha": str(date),
+                "cantidad": float(pred)
+            })
+        return results
 
     def save(
         self,
@@ -109,7 +125,12 @@ class ReplenishmentModel:
         Args:
             path (str): ruta donde guardar el modelo.
         """
-        return
+        with open(path, 'wb') as f:
+            pickle.dump({
+                "model": self._model,
+                "is_trained": self.is_trained,
+                "trained_gtins": self.trained_gtins
+            }, f)
 
     def load(
         self,
@@ -121,4 +142,11 @@ class ReplenishmentModel:
         Args:
             path (str): ruta desde donde cargar el modelo.
         """
-        return
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"No se encontró el modelo en {path}")
+            
+        with open(path, 'rb') as f:
+            data = pickle.load(f)
+            self._model = data["model"]
+            self.is_trained = data["is_trained"]
+            self.trained_gtins = data["trained_gtins"]

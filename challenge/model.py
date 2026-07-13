@@ -56,14 +56,16 @@ class ReplenishmentModel:
             # Guardamos los GTINs de entrenamiento para la validación de la API
             self.trained_gtins = set(df_out['gtin'].unique())
 
-            features = df_out[self.feature_cols].copy()
+            # Añade fecha a la salida por requerimiento
+            cols_to_return = self.feature_cols + ['fecha']
+            features = df_out[cols_to_return].copy()
             target = df_out[[target_column]].copy()
             return features, target         
         
         # CASO B: Pipeline de inferencia / predicción (consumo desde API)
         else:
-            features = df_out[self.feature_cols].copy()
-            features['fecha'] = data['fecha'].values 
+            cols_to_return = self.feature_cols + ['fecha']
+            features = df_out[cols_to_return].copy()
             return features
 
     def fit(

@@ -7,7 +7,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY . .
+COPY challenge/ /app/challenge/
+COPY model.pkl /app/
 
 # Expose port 8080 (required by Cloud Run)
 EXPOSE 8080

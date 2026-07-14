@@ -1,0 +1,53 @@
+name: 'Continuous Delivery'
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Descarga de código
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Autenticación en Google Cloud con la Service Account
+      - name: Google Auth
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }} # configurada en el repositorio
+
+      # Configurar el SDK de Google Cloud
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      # Autenticar Docker con la región de Chile (southamerica-west1)
+      - name: Authorize Docker with Artifact Registry
+        run: |
+          gcloud auth configure-docker southamerica-west1-docker.pkg.dev --quiet
+
+      # Construir y etiquetar la imagen usando Docker
+      - name: Build Docker Image
+        run: |
+          docker build -t southamerica-west1-docker.pkg.dev/prj-challenge-fs/challenge-repo/replenishment-api:latest .
+
+      # Subir la imagen a Artifact Registry
+      - name: Push Docker Image
+        run: |
+          docker push southamerica-west1-docker.pkg.dev/prj-challenge-fs/challenge-repo/replenishment-api:latest
+
+      # Desplegar en Cloud Run inyectando la Service Account para evadir restricciones de IAM
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy replenishment-api \
+            --image southamerica-west1-docker.pkg.dev/prj-challenge-fs/challenge-repo/replenishment-api:latest \
+            --region southamerica-west1 \
+            --service-account sa-check-api-11183346@prj-challenge-fs.iam.gserviceaccount.com \
+            --allow-unauthenticated \
+            --max-instances 3 \
+            --memory 1Gi \
+            --cpu 1 \
+            --quiet

@@ -51,3 +51,14 @@ Optimizar el modelo y reducir su complejidad es vital para un mejor desempeño y
 *   Mejora respecto al benchmark:      29.83%
 
 Al realizar ajuste de features quitando las variables de dia de semana y las categoricas el modelo mejora con una reducción del 29.83% con respecto al caso base. Un modelo más simple que no requiera de datos adicionales categóricos es vital para evitar problemas de sobrecarga y pueda superar pruebas de stress.
+
+### Decisiones de Diseño y Arquitectura
+
+Tratamiento de GTINs (Productos):
+
+*   Durante el preprocesamiento, los códigos de barra (GTIN) se transforman de manera estricta a tipos numéricos enteros (int64).
+
+*    Seguridad contra Productos Desconocidos: El modelo guarda en un set  (trained_gtins) los identificadores únicos con los que fue entrenado. Si la API recibe un producto fuera de este set durante la inferencia, se mitiga el riesgo de una predicción errónea rechazando la petición con un error HTTP 400.
+
+Tratamiento Temporal: La columna de fecha se procesa mediante técnicas de ingeniería de características (Feature Engineering) extrayendo componentes temporales (mes o estacionalidad) requeridos por el pipeline de entrenamiento.
+

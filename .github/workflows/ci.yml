@@ -1,11 +1,13 @@
 name: 'Continuous Integration'
 
 on:
-  branches-ignore:
-      - 'main'
+  push:
+    branches:
+      - main
+      - 'feature/**'
   pull_request:
     branches:
-      - 'main'
+      - main
 
 jobs:
   test:

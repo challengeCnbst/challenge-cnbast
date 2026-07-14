@@ -42,7 +42,7 @@ jobs:
       - name: Train model if missing
         run: |
           if [ ! -f model.pkl ]; then
-            python challenge/train.py
+            PYTHONPATH=. python challenge/train.py
           fi
 
       # Correr pruebas del modelo y api

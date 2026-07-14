@@ -78,7 +78,6 @@ Diferentes pruebas del challenge consumen la API usando estructuras de datos var
 
 El endpoint resuelve internamente cuál llave contiene la lista de elementos, unificándola en un DataFrame estructurado.
 
----
 
 ## Especificación de Endpoints
 
@@ -118,3 +117,32 @@ Valida la integridad del pipeline de entrenamiento, los pasos del preprocesamien
 make model-test
 ```
 Nota: Las pruebas de la API fueron validadas en un entorno limpio utilizando versiones alineadas de fastapi, starlette y httpx para asegurar la estabilidad del cliente de pruebas, las modificaciones fueron añadidas en los archivos de dependencias correspondientes.
+
+
+# Deploy y resultados del test de estrés (Locust)
+
+### Arquitectura de Contenedores y Recursos
+
+Para asegurar un rendimiento óptimo del modelo matemático bajo escenarios de alto estrés sin incurrir en sobrecostos redundantes, se definió la siguiente topología de recursos asignados por instancia:
+
+*   **Imagen Base:** `python:3.11-slim` (Minimiza el peso del contenedor y reduce la superficie de vulnerabilidades en producción).
+*   **Procesador (CPU):** `1 vCPU` (Balanceado para ejecutar operaciones con matrices de decisión del modelo Random Forest).
+*   **Memoria RAM:** `1 GiB` (Espacio para la carga estática de `model.pkl` en memoria y la manipulación de DataFrames).
+*   **Estrategia de Escalado:** Mínimo `0` instancias en reposo (costo cero sin tráfico) y un techo estricto de `--max-instances 3` gestionado por el balanceador de carga de GCP ante picos de concurrencia.
+
+### Test de estrés
+
+El endpoint /predict fue sometido a una prueba de carga simulando 100 usuarios concurrentes con una tasa de aceleración (spawn rate) de 1 usuario/segundo durante un ciclo continuo.
+
+* URL de Producción Activa: https://replenishment-api-823361295040.southamerica-west1.run.app
+
+* Peticiones Totales Procesadas: 3,279 solicitudes exitosas.
+
+* Tasa de Errores (Failure %): 0.00% (Ninguna degradación ni caídas por falta de memoria OOM).
+
+* Rendimiento Promedio: 54.85 req/s sostenidos.
+
+* Percentil 50 (Mediana de respuesta): 530 ms.
+
+* Latencia Mínima: 32 ms.
+

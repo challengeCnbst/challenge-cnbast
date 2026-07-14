@@ -38,6 +38,13 @@ jobs:
           pip install -r requirements-test.txt
           pip install -r requirements.txt
 
+      # Entrenar el modelo solo si el archivo .pkl no existe
+      - name: Train model if missing
+        run: |
+          if [ ! -f model.pkl ]; then
+            python challenge/train.py
+          fi
+
       # Correr pruebas del modelo y api
       - name: Run model test
         run: |

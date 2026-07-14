@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import fastapi
 from typing import List, Optional, Union
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
@@ -72,6 +72,13 @@ async def post_predict(payload: PredictionRequest) -> dict:
         raise HTTPException(
             status_code=400, 
             detail="Error 400: Debe proporcionar una lista válida en 'instances' o 'products'."
+        )
+
+    # Si el modelo no está cargado o no está entrenado, respondemos 503
+    if model is None or not getattr(model, "is_trained", False):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="El modelo predictivo no ha sido entrenado en el servidor."
         )
 
     # Convertir el payload validado a un DataFrame para el preprocesamiento

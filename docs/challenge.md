@@ -104,3 +104,17 @@ Recibe un listado de productos y fechas para calcular la estimación del algorit
 * Error de Formato/Fecha Inexistente: Ocurre si la fecha no tiene formato YYYY-MM-DD o no pertenece al calendario real.
 * Producto Desconocido: Ocurre si el GTIN enviado no estuvo presente en el dataset con el que se entrenó el modelo.
 
+# Tests 
+
+### 1. Pruebas de la API
+Valida la disponibilidad del servicio (`/health`), el flujo de predicción (`/predict`), el bloqueo seguro ante formatos de fecha inválidos (`HTTP 400`) y la restricción para productos (GTINs) fuera del set de entrenamiento (`HTTP 400`).
+```bash
+make api-test
+```
+### 2. Pruebas del Modelo
+
+Valida la integridad del pipeline de entrenamiento, los pasos del preprocesamiento y la consistencia dimensional de la salida del estimador.
+```bash
+make model-test
+```
+Nota: Las pruebas de la API fueron validadas en un entorno limpio utilizando versiones alineadas de fastapi, starlette y httpx para asegurar la estabilidad del cliente de pruebas, las modificaciones fueron añadidas en los archivos de dependencias correspondientes.
